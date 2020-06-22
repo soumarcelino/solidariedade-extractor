@@ -39,7 +39,7 @@ function parseRawText(text) {
 app.get('/', async function (req, res) {
   const cacheList = cache.get('list');
 
-  if (cacheList) {
+  if (cacheList && cacheList.length) {
     res.send(cacheList);
   } else {
     const data = await fetchData();
