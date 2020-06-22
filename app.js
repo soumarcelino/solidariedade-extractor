@@ -26,9 +26,10 @@ function parseRawText(text) {
     .map(function () {
       const item = cheerio.load(this);
       const title = item('.card-title a').text();
-      const link = item('.card-title a').attr('href');
       const description = item('.card-description').text();
-      return {title, link, description};
+      const link = item('.card-title a').attr('href');
+      const image = item('img').attr('src');
+      return {title, link, description, image};
     })
     .get();
 
