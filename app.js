@@ -29,7 +29,7 @@ function parseRawTextVoaa(text) {
       const item = cheerio.load(this);
       const title = item('.card-title a').text();
       const description = item('.card-description').text();
-      const link = item('.card-title a').attr('href');
+      const link = 'https://voaa.me' + item('.card-title a').attr('href');
       const image = item('img').attr('src');
       return {title, link, description, image};
     })
@@ -59,7 +59,7 @@ function parseRawTextKickante(text) {
         'href',
       )}`;
       const image = item('img').attr('src');
-      return {title, link,city, description, image};
+      return {title, link, city, description, image};
     })
     .get();
 
