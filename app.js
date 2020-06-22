@@ -7,20 +7,22 @@ const cheerio = require('cheerio');
 const NodeCache = require('node-cache');
 
 const oneDayInSeconds = 60 * 60 * 24;
-const VOA_URL = 'https://voaa.me/pages/campanhas-em-destaque';
+const VOAA_URL = 'https://voaa.me/pages/campanhas-em-destaque';
+const KICKANTE_URL = 'https://www.kickante.com.br';
+const KICKANTE_URL_EXTRACT = `${KICKANTE_URL}/comunidade`;
 
 const cache = new NodeCache({
   stdTTL: oneDayInSeconds,
   checkperiod: oneDayInSeconds,
 });
 
-async function fetchData() {
-  const res = await fetch(VOA_URL);
+async function fetchVoaaData() {
+  const res = await fetch(VOAA_URL);
   const resText = await res.text();
-  return parseRawText(resText);
+  return parseRawTextVoaa(resText);
 }
 
-function parseRawText(text) {
+function parseRawTextVoaa(text) {
   const $ = cheerio.load(text);
   const data = $('.card-deck .card')
     .map(function () {
@@ -37,13 +39,52 @@ function parseRawText(text) {
   return data;
 }
 
+async function fetchKickanteData() {
+  const res = await fetch(KICKANTE_URL_EXTRACT);
+  const resText = await res.text();
+  return parseRawTextKickante(resText);
+}
+
+function parseRawTextKickante(text) {
+  const $ = cheerio.load(text);
+  const data = $('.campaign-card-wrapper')
+    .map(function () {
+      const item = cheerio.load(this);
+      const title = item('.field-group-format h3 a').text();
+      const city = item('.field-group-format .field-name-field-city').text();
+      const description = item(
+        '.field-group-format .field-name-field-short-description div .even',
+      ).text();
+      const link = `${KICKANTE_URL}${item('.field-group-format h3 a').attr(
+        'href',
+      )}`;
+      const image = item('img').attr('src');
+      return {title, link,city, description, image};
+    })
+    .get();
+
+  cache.set('kickante', data);
+  return data;
+}
+
 app.get('/', async function (req, res) {
   const cacheList = cache.get('list');
 
   if (cacheList && cacheList.length) {
     res.send(cacheList);
   } else {
-    const data = await fetchData();
+    const data = await fetchVoaaData();
+    res.send(data);
+  }
+});
+
+app.get('/kickante', async function (req, res) {
+  const cacheList = cache.get('kickante');
+
+  if (cacheList && cacheList.length) {
+    res.send(cacheList);
+  } else {
+    const data = await fetchKickanteData();
     res.send(data);
   }
 });
